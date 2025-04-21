@@ -5,7 +5,7 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use super::device::AudioDeviceManager;
-use crate::spectrum::compute_spectrum;
+use crate::spectrum::SpectrumAnalyzer;
 
 #[derive(Clone)]
 pub struct AudioCapture {
@@ -112,12 +112,14 @@ impl AudioCapture {
         let ring = HeapRb::<f32>::new(8192);
         let (mut producer, mut consumer) = ring.split();
         let spectrum = self.spectrum.clone();
+        let sample_rate = config.sample_rate().0 as f32;
 
         std::thread::Builder::new()
             .name("audio_processing".to_string())
             .spawn(move || {
-                let mut buffer = Vec::with_capacity(4096);
+                let mut buffer = Vec::with_capacity(2048);
                 let mut last_process = Instant::now();
+                let mut analyzer = SpectrumAnalyzer::new(sample_rate);
                 
                 loop {
                     let now = Instant::now();
@@ -126,10 +128,10 @@ impl AudioCapture {
                         continue;
                     }
                     
-                    while consumer.len() >= 4096 {
+                    while consumer.len() >= 2048 {
                         buffer.clear();
-                        buffer.extend(consumer.pop_iter().take(4096));
-                        let spectrum_data = compute_spectrum(&buffer);
+                        buffer.extend(consumer.pop_iter().take(2048));
+                        let spectrum_data = analyzer.compute_spectrum(&buffer);
                         *spectrum.lock() = spectrum_data;
                     }
                     

@@ -39,6 +39,7 @@ impl SpectrumApp {
         }
     }
     
+    // 显示事件列表
     pub fn show_device_switcher(&self) {
         use std::io::{self, Write};
         

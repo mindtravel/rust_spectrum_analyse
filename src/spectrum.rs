@@ -61,31 +61,39 @@ impl SpectrumAnalyzer {
         }
     }
 
-    fn compute_spectrum(&mut self, audio_buffer: &[f32]) -> Vec<f32> {
-        let fft = self.fft_planner.plan_fft_forward(4096);
+    pub fn compute_spectrum(&mut self, audio_buffer: &[f32]) -> Vec<f32> {
+        let fft = self.fft_planner.plan_fft_forward(2048);
         let mut complex_buffer = apply_window(audio_buffer);
         fft.process(&mut complex_buffer);
         
         // 计算RMS和峰值用于动态范围控制
         let rms = (audio_buffer.iter().map(|&x| x * x).sum::<f32>() / audio_buffer.len() as f32).sqrt();
         let peak = audio_buffer.iter().fold(0.0f32, |max, &x| max.max(x.abs()));
-        let dynamic_range = rms.max(peak * 0.7); // 综合考虑RMS和峰值
+        let dynamic_range = rms.max(peak * 0.7);
     
         // 修改频谱计算，使用动态范围
         let mut spectrum: Vec<f32> = complex_buffer.iter()
-            .take(2048)
+            .take(1024)
             .enumerate()
-            .map(|(i, c)| {
-                let freq = i as f32 * 44100.0 / 8192.0;
+            .filter_map(|(i, c)| {
+                let freq = i as f32 * 44100.0 / 1024.0 + 1.0;
+                if freq > 22050.0 {
+                    return None;
+                }
+                
                 let erb = 21.4 * (0.00437 * freq + 1.0).log10();
-                let magnitude = c.norm() / 2048.0 * dynamic_range;
+                let magnitude = c.norm() / 1024.0 * dynamic_range;
                 
                 let db = 20.0 * (magnitude + 1e-10).log10();
-                let normalized = ((db + 90.0) / 90.0).clamp(0.0, 1.0);
+                let normalized = ((db + 60.0) / 60.0).clamp(0.0, 1.0);
                 
-                normalized * (1.0 + erb * 0.1)
+                Some(normalized * (1.0 + erb * 0.1))
             })
             .collect();
+
+        while spectrum.len() < 2048 {
+            spectrum.push(0.0);
+        }
     
         smooth_spectrum(&mut spectrum);
         spectrum
@@ -109,12 +117,6 @@ impl SpectrumAnalyzer {
         
         band_levels
     }
-}
-
-pub fn compute_spectrum(audio_buffer: &[f32]) -> Vec<f32> {
-    // 创建一次性的分析器进行处理
-    let mut analyzer = SpectrumAnalyzer::new(44100.0);
-    analyzer.compute_spectrum(audio_buffer)
 }
 
 fn apply_window(audio_buffer: &[f32]) -> Vec<Complex<f32>> {
