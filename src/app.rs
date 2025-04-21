@@ -3,6 +3,7 @@ use egui;
 use parking_lot::Mutex;
 use std::sync::Arc;
 use std::time::Instant;
+use myalgorithm::BUFFER_SZ;
 
 pub struct SpectrumApp {
     spectrum: Arc<Mutex<Vec<f32>>>,
@@ -18,8 +19,8 @@ impl SpectrumApp {
     pub fn new(spectrum: Arc<Mutex<Vec<f32>>>) -> Self {
         Self {
             spectrum,
-            display_buffer: vec![0.0; 2048],
-            frame_buffer: vec![0.0; 2048],
+            display_buffer: vec![0.0; BUFFER_SZ],
+            frame_buffer: vec![0.0; BUFFER_SZ],
             interpolation: 0.0,
             last_update: Instant::now(),
             frame_time: Instant::now(),
@@ -34,8 +35,8 @@ impl SpectrumApp {
         
         for (i, &value) in spectrum.iter().enumerate() {
             // 使用指数平滑
-            let target = value.max(self.display_buffer[i] * 0.95);
-            self.display_buffer[i] = self.display_buffer[i] * 0.8 + target * 0.2;
+            let target = value.max(self.display_buffer[i]*0.9);
+            self.display_buffer[i] = self.display_buffer[i] * 0.2 + target * 0.8;
         }
     }
     

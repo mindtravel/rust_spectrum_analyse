@@ -1821,6 +1821,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "myalgorithm"
+version = "0.1.0"
+dependencies = [
+ "num-traits",
+]
+
+[[package]]
 name = "ndk"
 version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2467,6 +2474,7 @@ dependencies = [
  "egui",
  "jack",
  "jack-sys",
+ "myalgorithm",
  "parking_lot",
  "ringbuf",
  "rustfft",

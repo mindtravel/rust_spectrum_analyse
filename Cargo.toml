@@ -16,3 +16,4 @@ windows = { version = "0.52", features = ["Win32_Media_Audio", "Win32_Foundation
 jack = { version = "0.11", features = ["default"] }
 jack-sys = "0.5"
 crossbeam-channel = "0.5"
+myalgorithm = { path = "./myalgorithm" }

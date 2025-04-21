@@ -1,4 +1,9 @@
 use egui::{Align2, Color32, FontId, Pos2, Rect, Ui};
+use myalgorithm::SAMPLE_RATE;
+use myalgorithm::MAX_FREQ;
+use myalgorithm::BUFFER_SZ;
+use myalgorithm::get_freq;
+use myalgorithm::get_normalized_db;
 
 // 绘制频谱
 pub fn draw_spectrum(ui: &mut Ui, spectrum: &[f32]) {
@@ -21,31 +26,29 @@ fn draw_background(painter: &egui::Painter, plot_rect: &Rect) {
 
 // 绘制频谱曲线
 fn draw_spectrum_lines(painter: &egui::Painter, plot_rect: &Rect, spectrum: &[f32]) {
-    let sample_rate = 44100.0;
     let mut points = Vec::with_capacity(spectrum.len());
     let mut colors = Vec::with_capacity(spectrum.len());
 
     // 只处理到20kHz的数据
-    let max_freq = 20000.0;
-    // let max_index = ((max_freq * 8192.0) / sample_rate) as usize;
-    let max_index = 2048 as usize;
+    let max_index = BUFFER_SZ;
 
     for (i, &value) in spectrum.iter().take(max_index).enumerate() {
         // 计算当前的频率
-        let freq = (i as f32 * sample_rate / 1024.0) + 1.0;
+        let freq = get_freq(i) + 1.0;
 
         // 统一的频率到坐标的映射函数
         let x = freq_to_x_coord(freq, plot_rect);
 
         let db = 20.0 * (value + 1e-10).log10();
-        let db_normalized = (db + 60.0) / 60.0;
+        let db_normalized = get_normalized_db(db);
         let height = db_normalized.clamp(0.0, 1.0) * plot_rect.height() * 0.9; // 缩小高度到90%
+        let id_f32 = i as f32 / max_index as f32;
 
         // 根据频段选择颜色
         let color = Color32::from_rgb(
             (255.0 * db_normalized) as u8,
             (255.0 * (1.0 - db_normalized)) as u8,
-            50,
+            (255.0 * id_f32) as u8,
         );
 
         points.push(Pos2::new(x, plot_rect.bottom() - height));
@@ -160,7 +163,7 @@ fn draw_db_marks(painter: &egui::Painter, plot_rect: &Rect) {
     let plot_height = plot_rect.height() * 0.9; // 使用90%的高度
 
     for &db in &db_marks {
-        let y = plot_rect.bottom() - ((db + 60) as f32 / 60.0) * plot_height;
+        let y = plot_rect.bottom() - get_normalized_db(db) * plot_height;
 
         // 刻度线
         painter.line_segment(

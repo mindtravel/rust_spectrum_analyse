@@ -3,6 +3,7 @@ use parking_lot::Mutex;
 use ringbuf::HeapRb;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
+use myalgorithm::BUFFER_SZ;
 
 use super::device::AudioDeviceManager;
 use crate::spectrum::SpectrumAnalyzer;
@@ -117,7 +118,7 @@ impl AudioCapture {
         std::thread::Builder::new()
             .name("audio_processing".to_string())
             .spawn(move || {
-                let mut buffer = Vec::with_capacity(2048);
+                let mut buffer = Vec::with_capacity(BUFFER_SZ);
                 let mut last_process = Instant::now();
                 let mut analyzer = SpectrumAnalyzer::new(sample_rate);
                 
@@ -128,9 +129,9 @@ impl AudioCapture {
                         continue;
                     }
                     
-                    while consumer.len() >= 2048 {
+                    while consumer.len() >= BUFFER_SZ {
                         buffer.clear();
-                        buffer.extend(consumer.pop_iter().take(2048));
+                        buffer.extend(consumer.pop_iter().take(BUFFER_SZ));
                         let spectrum_data = analyzer.compute_spectrum(&buffer);
                         *spectrum.lock() = spectrum_data;
                     }

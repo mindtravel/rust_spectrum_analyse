@@ -1,5 +1,9 @@
 use rustfft::{num_complex::Complex, FftPlanner};
 use std::f32::consts::PI;
+use myalgorithm::get_freq;
+use myalgorithm::SAMPLE_RATE;
+use myalgorithm::BUFFER_SZ_HALF;
+use myalgorithm::BUFFER_SZ;
 
 #[derive(Copy, Clone)]
 pub enum Resolution {
@@ -62,7 +66,7 @@ impl SpectrumAnalyzer {
     }
 
     pub fn compute_spectrum(&mut self, audio_buffer: &[f32]) -> Vec<f32> {
-        let fft = self.fft_planner.plan_fft_forward(2048);
+        let fft = self.fft_planner.plan_fft_forward(BUFFER_SZ);
         let mut complex_buffer = apply_window(audio_buffer);
         fft.process(&mut complex_buffer);
         
@@ -73,16 +77,16 @@ impl SpectrumAnalyzer {
     
         // 修改频谱计算，使用动态范围
         let mut spectrum: Vec<f32> = complex_buffer.iter()
-            .take(1024)
+            .take(BUFFER_SZ_HALF)
             .enumerate()
             .filter_map(|(i, c)| {
-                let freq = i as f32 * 44100.0 / 1024.0 + 1.0;
-                if freq > 22050.0 {
+                let freq = get_freq(i);
+                if freq > SAMPLE_RATE / 2.0 {
                     return None;
                 }
                 
                 let erb = 21.4 * (0.00437 * freq + 1.0).log10();
-                let magnitude = c.norm() / 1024.0 * dynamic_range;
+                let magnitude = c.norm() / BUFFER_SZ_HALF as f32 * dynamic_range;
                 
                 let db = 20.0 * (magnitude + 1e-10).log10();
                 let normalized = ((db + 60.0) / 60.0).clamp(0.0, 1.0);
@@ -91,7 +95,7 @@ impl SpectrumAnalyzer {
             })
             .collect();
 
-        while spectrum.len() < 2048 {
+        while spectrum.len() < BUFFER_SZ {
             spectrum.push(0.0);
         }
     
@@ -133,9 +137,9 @@ fn apply_window(audio_buffer: &[f32]) -> Vec<Complex<f32>> {
 fn compute_magnitude_spectrum(complex_buffer: &[Complex<f32>]) -> Vec<f32> {
     let mut spectrum: Vec<f32> = complex_buffer
         .iter()
-        .take(2048)
+        .take(BUFFER_SZ)
         .map(|c| {
-            let magnitude = c.norm() / 2048.0;
+            let magnitude = c.norm() / BUFFER_SZ as f32;
             magnitude.powf(0.5)
         })
         .collect();
