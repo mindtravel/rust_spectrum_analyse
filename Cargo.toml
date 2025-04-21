@@ -1,0 +1,18 @@
+[package]
+name = "rust_spectrum_analyse"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+cpal = "0.15.2"
+rustfft = "6.1"
+egui = "0.22"
+eframe = "0.22"
+ringbuf = "0.3"
+parking_lot = "0.12"
+crossbeam = "0.8.4"
+winapi = { version = "0.3", features = ["winuser", "windef"] }
+windows = { version = "0.52", features = ["Win32_Media_Audio", "Win32_Foundation"] }
+jack = { version = "0.11", features = ["default"] }
+jack-sys = "0.5"
+crossbeam-channel = "0.5"
