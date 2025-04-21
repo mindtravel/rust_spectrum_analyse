@@ -21,7 +21,7 @@ pub fn draw_spectrum(ui: &mut Ui, spectrum: &[f32]) {
 
 // 绘制背景
 fn draw_background(painter: &egui::Painter, plot_rect: &Rect) {
-    painter.rect_filled(*plot_rect, 0.0, Color32::from_rgb(20, 20, 20));
+    painter.rect_filled(*plot_rect, 0.0, Color32::from_rgb(200, 200, 200));
 }
 
 // 绘制频谱曲线
@@ -41,7 +41,7 @@ fn draw_spectrum_lines(painter: &egui::Painter, plot_rect: &Rect, spectrum: &[f3
 
         let db = 20.0 * (value + 1e-10).log10();
         let db_normalized = get_normalized_db(db);
-        let height = db_normalized.clamp(0.0, 1.0) * plot_rect.height() * 0.9; // 缩小高度到90%
+        let height = db_normalized.clamp(0.0, 1.2) * plot_rect.height() * 0.9; // 缩小高度到90%
         let id_f32 = i as f32 / max_index as f32;
 
         // 根据频段选择颜色
@@ -68,7 +68,7 @@ fn draw_spectrum_lines(painter: &egui::Painter, plot_rect: &Rect, spectrum: &[f3
 
 // 添加统一的频率到坐标的映射函数
 fn freq_to_x_coord(freq: f32, plot_rect: &Rect) -> f32 {
-    let log_x = (freq.log10() - 1.0) / 3.5;  // 调整为4.0使刻度分布更均匀
+    let log_x = (freq.log10() - 1.0) / 3.5;  
     plot_rect.left() + log_x * plot_rect.width() + 60.0
 }
 
